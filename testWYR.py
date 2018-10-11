@@ -17,15 +17,18 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout,
     QLabel,
     QRadioButton,
+    QButtonGroup,
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QBasicTimer, Qt, QMargins
 
 QUESTIONS = {
-    '1': {'Q': '1、早上起床之后通常吃什么当早点?', 'A': 'A  蛋和面包', 'B': 'B  麦片', 'C': 'C  汽水', 'D': 'D  什么都不吃'},
-    '2': {'Q': '2、如果你可以选任何一样你想吃的东西当早点, 你会选择什么?', 'A': 'A  蛋和吐司', 'B': 'B  蛋糕', 'C': 'C  汽水', 'D': 'D  其他别的东西'},
-    '3': {'Q': '3、午餐时，你会？', 'A': 'A  不吃东西因为太忙或担心体重', 'B': 'B  吃你想了一个早上想吃的东西', 'C': 'C  吃自己带来的食物', 'D': 'D  问朋友要吃什么再一起去吃'},
-
+    # '4': {'Q': '', 'A': 'A  ', 'B': 'B  ', 'C': 'C  ', 'D': 'D  '}
+    '1': {'Q': '1. 早上起床之后通常吃什么当早点?', 'A': 'A  蛋和面包', 'B': 'B  麦片', 'C': 'C  汽水', 'D': 'D  什么都不吃'},
+    '2': {'Q': '2. 如果你可以选任何一样你想吃的东西当早点, 你会选择什么?', 'A': 'A  蛋和吐司', 'B': 'B  蛋糕', 'C': 'C  汽水', 'D': 'D  其他别的东西'},
+    '3': {'Q': '3. 午餐时，你会？', 'A': 'A  不吃东西因为太忙或担心体重', 'B': 'B  吃你想了一个早上想吃的东西', 'C': 'C  吃自己带来的食物', 'D': 'D  问朋友要吃什么再一起去吃'},
+    '4': {'Q': '4. 一位朋友请你吃一些她/他带来的食物你会？', 'A': '  吃一小口因为实在太饿了', 'B': '  为了保持礼貌只吃一小口', 'C': '  拒绝他/她的好意因为你正在减肥', 'D': '  吃两口'},
+    '5': {'Q': '5. 你未来的男/女朋友请你吃一样东西，你想那会是什么?', 'A': 'A  一块蛋糕', 'B': 'B  一颗苹果', 'C': 'C  一片披萨', 'D': 'D  一个胡萝卜'}
 }
 
 
@@ -33,7 +36,7 @@ class Window(QWidget):
     """创建窗口类"""
 
     def __init__(self):
-        self.ansList = []
+        self.answers = {}
         super(Window, self).__init__()
         #     self.initWindow()
         #
@@ -49,28 +52,35 @@ class Window(QWidget):
         self.frameGeometry().moveCenter(screen_point)
 
         # 两个按钮，水平布局
-        h_box = QHBoxLayout()
-        h_box.addStretch(1)  # 伸缩因子，按钮置右
+        self.h_box = QHBoxLayout()
+        self.h_box.addStretch(1)  # 伸缩因子，按钮置右
         self.pre_button = QPushButton('上一题')
         self.next_button = QPushButton('下一题')
+        self.commit_button = QPushButton('确认提交')
         self.pre_button.setMaximumWidth(120)
         self.next_button.setMaximumWidth(120)
+        self.commit_button.setMaximumWidth(120)
         # 按钮点击关联方法
         self.pre_button.clicked.connect(self.pre_question)
         self.next_button.clicked.connect(self.next_question)
+        self.commit_button.clicked.connect(self.commit)
 
         # 按钮设置为不可用
         self.pre_button.setEnabled(False)
         self.next_button.setEnabled(False)
+        self.commit_button.setEnabled(False)
 
-        h_box.addWidget(self.pre_button, alignment=Qt.AlignBottom)
-        h_box.addWidget(self.next_button, alignment=Qt.AlignBottom)
+        self.h_box.addWidget(self.pre_button, alignment=Qt.AlignBottom)
+        self.h_box.addWidget(self.next_button, alignment=Qt.AlignBottom)
+        self.h_box.addWidget(self.commit_button, alignment=Qt.AlignBottom)
 
         # 垂直布局
         self.v_box = QVBoxLayout()
 
         # 标签显示消息
         self.content_label = QLabel()
+        # 自动换行设置
+        # self.content_label.setWordWrap(True)
         self.content_label.setText('点击开始加载资源')
         # 设置标签大小
 
@@ -88,11 +98,20 @@ class Window(QWidget):
         # 按钮点击关联的方法
         self.start_btn.clicked.connect(self.start_downloader)
 
-        # 答案按钮
+        # 答案按钮组与答案按钮
+        self.ans_btn_group = QButtonGroup()
+        # 关联方法
+        self.ans_btn_group.buttonClicked.connect(self.saved_answer)
+
         self.btn_a = QRadioButton()
         self.btn_b = QRadioButton()
         self.btn_c = QRadioButton()
         self.btn_d = QRadioButton()
+        # 添加到组中，并设置ID
+        self.ans_btn_group.addButton(self.btn_a, id=1)
+        self.ans_btn_group.addButton(self.btn_b, id=2)
+        self.ans_btn_group.addButton(self.btn_c, id=3)
+        self.ans_btn_group.addButton(self.btn_d, id=4)
 
         # 答案按钮布局
         v_ans_box = QVBoxLayout()
@@ -120,7 +139,7 @@ class Window(QWidget):
 
         # 将水平布局加入垂直布局
         self.v_box.addLayout(v_ans_box)
-        self.v_box.addLayout(h_box)
+        self.v_box.addLayout(self.h_box)
         # 窗口展示布局
         self.setLayout(self.v_box)
 
@@ -224,8 +243,61 @@ class Window(QWidget):
             # 设置内容
             self.set_content(question_dict)
         else:
-            # 将一题按钮设置为不可用
+            # 将下题按钮设置为不可用
             self.next_button.setEnabled(False)
+            # 提交按钮可用
+            self.commit_button.setEnabled(True)
+
+    def commit(self):
+        lock, key = self.checked_answer()
+        if lock:
+            print('提交成功')
+        else:
+            print('第{}题还没做！'.format(key))
+
+    def checked_answer(self):
+        for key in QUESTIONS:
+            if not self.answers.get(key):
+                return False, key
+        return True, 1
+
+
+    # def clear_checked(self):
+    #     """清除按钮选中状态"""
+    #     if self.btn_a.isChecked():
+    #         self.btn_a.setChecked(True)
+    #
+    #     if self.btn_b.isChecked():
+    #
+    #         self.btn_b.setChecked(True)
+    #     if self.btn_c.isChecked():
+    #
+    #         self.btn_c.setChecked(True)
+    #     if self.btn_d.isChecked():
+    #
+    #         self.btn_d.setChecked(True)
+
+    def saved_answer(self):
+        if self.ans_btn_group.checkedId() == 1:
+            print('您选择了A')
+            # 获取当前题号
+            sequence = str(self.match_sequence())
+            self.answers[sequence] = 'A'
+
+        elif self.ans_btn_group.checkedId() == 2:
+            print('您选择了B')
+            sequence = str(self.match_sequence())
+            self.answers[sequence] = 'B'
+
+        elif self.ans_btn_group.checkedId() == 3:
+            print('您选择了C')
+            sequence = str(self.match_sequence())
+            self.answers[sequence] = 'C'
+
+        else:
+            print('您选择了D')
+            sequence = str(self.match_sequence())
+            self.answers[sequence] = 'D'
 
 
 if __name__ == '__main__':
@@ -235,3 +307,7 @@ if __name__ == '__main__':
     window = Window()
     # 退出
     sys.exit(app.exec_())
+
+
+
+
