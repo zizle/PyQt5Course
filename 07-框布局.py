@@ -1,6 +1,7 @@
 # _*_ coding:utf-8 _*_
 # author: zizle
 # last edited: 2018/10/09
+# 布局调整可参考简书文章： https://www.jianshu.com/p/bab37cdac844
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout
@@ -27,9 +28,9 @@ class Window(QWidget):
         vbox = QVBoxLayout()
         # 伸展因子，靠下显示
         vbox.addStretch(1)
-        vbox.addLayout(hbox)
+        vbox.addLayout(vbox)
 
-        self.setLayout(vbox)
+        self.setLayout(hbox)
 
         self.setGeometry(300, 300, 550, 150)
         self.setWindowTitle('框布局展示')
